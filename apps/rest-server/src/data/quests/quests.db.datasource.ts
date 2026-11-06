@@ -19,6 +19,16 @@ const StatusColumn = z.enum(QUEST_STATUSES);
 const DifficultyColumn = z.enum(QUEST_DIFFICULTIES);
 
 export const QuestsDbDatasource = {
+  async countCompletedByDifficulty() {
+    const rows = await dbClient
+      .select({ difficulty: questTable.difficulty, count: count() })
+      .from(questTable)
+      .where(and(eq(questTable.status, 'resolved'), isNull(questTable.deletedAt)))
+      .groupBy(questTable.difficulty);
+
+    return rows.map(row => ({ difficulty: DifficultyColumn.parse(row.difficulty), count: row.count }));
+  },
+
   async update(id: string, input: UpdateQuestInput): Promise<QuestData | null> {
     const [quest] = await dbClient
       .update(questTable)

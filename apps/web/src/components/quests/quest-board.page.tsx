@@ -5,6 +5,7 @@ import { Col, Grid } from '@atomic/obj.grid';
 import { ApiError } from '@core/http/http-client';
 import { updateQuest } from '@data/quests/quests.datasource';
 import type { Quest, QuestInput, UpdateQuestInput } from '@domain/model/quest.model';
+import { usePlayerProgress } from '@domain/player/use-player-progress.use-case';
 import { useCreateQuest } from '@domain/quests/use-create-quest.use-case';
 import { useListQuests } from '@domain/quests/use-list-quests.use-case';
 import { useMemo, useRef, useState } from 'react';
@@ -18,6 +19,12 @@ import { NEXT_STATUS, QUEST_STATUS_COLUMNS } from './quest-presentation';
 const QuestBoardPage = () => {
   const { quests, isLoading, error, refetch, replaceQuest } = useListQuests();
   const { createQuest, isLoading: isCreating, error: createError } = useCreateQuest();
+  const {
+    progress,
+    isLoading: isLoadingProgress,
+    error: progressError,
+    refetch: refetchProgress,
+  } = usePlayerProgress();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -36,6 +43,7 @@ const QuestBoardPage = () => {
     try {
       const updated = await updateQuest(quest.id, input);
       replaceQuest(updated);
+      void refetchProgress();
       return true;
     } catch (err) {
       setUpdateError(err instanceof ApiError ? err.message : 'Falha ao atualizar a missão');
@@ -80,7 +88,12 @@ const QuestBoardPage = () => {
       </Col>
 
       <Col sm={12} className="mb-lg">
-        <QuestPlayerHud />
+        <QuestPlayerHud
+          progress={progress}
+          isLoading={isLoadingProgress}
+          error={progressError?.message ?? null}
+          onRetry={refetchProgress}
+        />
       </Col>
 
       {updateError && !editingQuest && (

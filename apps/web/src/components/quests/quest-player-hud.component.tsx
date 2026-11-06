@@ -1,4 +1,13 @@
-export const QuestPlayerHud = () => (
+import type { PlayerProgress } from '@data/player/player.datasource';
+
+interface QuestPlayerHudProps {
+  progress: PlayerProgress | null;
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}
+
+export const QuestPlayerHud = ({ progress, isLoading, error, onRetry }: QuestPlayerHudProps) => (
   <div
     className="flex flex-wrap items-center gap-x-[28px] gap-y-[20px] rounded-[6px] border px-[22px] py-[16px]"
     style={{
@@ -22,29 +31,45 @@ export const QuestPlayerHud = () => (
           Recruta
         </div>
         <div className="text-[15px] italic" style={{ color: 'var(--ficha-apoio)' }}>
-          Recruta da Guilda Taqtile · Nível 1
+          Recruta da Guilda Taqtile{progress && ` · Nível ${progress.level}`}
         </div>
       </div>
     </div>
 
     <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-[6px]">
-      <div className="flex justify-between text-[15px]" style={{ color: 'var(--ficha-xp-rotulo)' }}>
-        <span>Experiência</span>
-        <span className="font-secondary text-[13px]" style={{ color: 'var(--color-primary-soft)' }}>
-          0 / 100 XP
-        </span>
-      </div>
-      <div
-        // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
-        role="progressbar"
-        aria-label="Experiência até o próximo nível"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={0}
-        className="h-[12px] overflow-hidden rounded-[6px] border"
-        style={{ background: 'var(--ficha-xp-trilho)', borderColor: 'var(--ficha-borda)' }}>
-        <div className="h-full" style={{ width: '0%', background: 'var(--color-primary-medium)' }} />
-      </div>
+      {isLoading && !progress && <span>Carregando progresso...</span>}
+      {error && (
+        <div role="alert">
+          {error}{' '}
+          <button type="button" onClick={onRetry} className="underline">
+            Tentar novamente
+          </button>
+        </div>
+      )}
+      {progress && (
+        <>
+          <div className="flex justify-between text-[15px]" style={{ color: 'var(--ficha-xp-rotulo)' }}>
+            <span>Experiência</span>
+            <span className="font-secondary text-[13px]" style={{ color: 'var(--color-primary-soft)' }}>
+              {progress.currentXp} / 100 XP
+            </span>
+          </div>
+          <div
+            // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
+            role="progressbar"
+            aria-label="Experiência até o próximo nível"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress.currentXp}
+            className="h-[12px] overflow-hidden rounded-[6px] border"
+            style={{ background: 'var(--ficha-xp-trilho)', borderColor: 'var(--ficha-borda)' }}>
+            <div
+              className="h-full"
+              style={{ width: `${progress.currentXp}%`, background: 'var(--color-primary-medium)' }}
+            />
+          </div>
+        </>
+      )}
     </div>
   </div>
 );

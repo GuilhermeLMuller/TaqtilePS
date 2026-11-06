@@ -78,3 +78,8 @@ Clean Architecture, one feature spanning three layers under `apps/rest-server/sr
 
 The only feature implemented so far. `GET /quests` (optional `status` filter, paginated), `GET /quests/:id`,
 and `POST /quests` — see [`apps/rest-server/src/api/quests/`](apps/rest-server/src/api/quests/).
+
+`PATCH /quests/:id` updates a quest's title, description, difficulty, or status. `GET /player/progress`
+returns `totalXp`, `level`, and `currentXp`, calculated from all non-deleted resolved quests. Every 100 XP
+raises the level, preserving any remaining XP. Reopening a quest or changing its difficulty recalculates
+the progress from the current quest state. The progress represents the shared board, not individual players.
