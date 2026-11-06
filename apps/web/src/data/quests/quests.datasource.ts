@@ -40,3 +40,7 @@ export async function updateQuest(id: string, input: UpdateQuestInput): Promise<
   });
   return questSchema.parse(response);
 }
+
+export async function deleteQuest(id: string): Promise<void> {
+  await apiRequest<void>(`/quests/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

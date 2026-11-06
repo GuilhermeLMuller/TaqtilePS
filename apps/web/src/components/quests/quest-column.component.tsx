@@ -8,10 +8,20 @@ interface QuestColumnProps {
   quests: Quest[];
   onAdvance: (quest: Quest) => void;
   onEdit: (quest: Quest) => void;
+  onRemove: (quest: Quest) => void;
   isUpdating: boolean;
 }
 
-export const QuestColumn = ({ status, title, subtitle, quests, onAdvance, onEdit, isUpdating }: QuestColumnProps) => (
+export const QuestColumn = ({
+  status,
+  title,
+  subtitle,
+  quests,
+  onAdvance,
+  onEdit,
+  onRemove,
+  isUpdating,
+}: QuestColumnProps) => (
   <section
     className="border-background-strong flex flex-col rounded-[6px] border"
     style={{ background: 'var(--pergaminho-coluna)' }}>
@@ -44,6 +54,7 @@ export const QuestColumn = ({ status, title, subtitle, quests, onAdvance, onEdit
           columnStatus={status}
           onAdvance={onAdvance}
           onEdit={onEdit}
+          onRemove={onRemove}
           isUpdating={isUpdating}
         />
       ))}

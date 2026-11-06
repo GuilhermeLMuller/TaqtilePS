@@ -34,5 +34,8 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
     throw new ApiError(error?.message ?? `A requisição falhou (status ${response.status}).`, error?.code);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
   return response.json();
 }

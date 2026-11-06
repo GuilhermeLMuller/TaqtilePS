@@ -29,6 +29,13 @@ describe('apiRequest', () => {
     );
   });
 
+  it('returns undefined for a successful 204 response without parsing JSON', async () => {
+    const json = vi.fn();
+    mockFetch({ ok: true, status: 204, json });
+    await expect(apiRequest<void>('/quests/q_1', { method: 'DELETE' })).resolves.toBeUndefined();
+    expect(json).not.toHaveBeenCalled();
+  });
+
   it('throws an ApiError keeping the original failure as cause when the server is unreachable', async () => {
     const networkError = new TypeError('Failed to fetch');
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(networkError));

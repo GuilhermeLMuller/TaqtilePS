@@ -1,6 +1,8 @@
 import { Elysia, status } from 'elysia';
+import { z } from 'zod';
 import { ErrorsResponse } from '#api/common/common.payload.js';
 import { CreateQuestUseCase } from '#domain/quests/create-quest.use-case.js';
+import { DeleteQuestUseCase } from '#domain/quests/delete-quest.use-case.js';
 import { GetQuestUseCase } from '#domain/quests/get-quest.use-case.js';
 import { ListQuestsUseCase } from '#domain/quests/list-quests.use-case.js';
 import { UpdateQuestUseCase } from '#domain/quests/update-quest.use-case.js';
@@ -34,6 +36,19 @@ export const QuestsController = new Elysia({ name: 'QuestsController', prefix: '
     body: UpdateQuestRequest,
     response: { 200: 'QuestResponse', 404: 'ErrorsResponse', 422: 'ErrorsResponse' },
   })
+
+  .delete(
+    '/:id',
+    async ({ params }) => {
+      await DeleteQuestUseCase.exec(params.id);
+      return new Response(null, { status: 204 });
+    },
+    {
+      detail: { description: 'Remove a quest.' },
+      params: QuestParams,
+      response: { 204: z.void(), 404: 'ErrorsResponse', 422: 'ErrorsResponse' },
+    },
+  )
 
   .post(
     '',

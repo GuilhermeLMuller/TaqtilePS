@@ -139,6 +139,36 @@ describe('useListQuests', () => {
     expect(result.current.isLoading).toBe(false);
   });
 
+  it('removes a quest and prevents an older list response from restoring it', async () => {
+    const page = (nodes: Quest[]) => ({
+      nodes,
+      count: nodes.length,
+      pageInfo: { limit: 100, offset: 0, hasNextPage: false, hasPreviousPage: false },
+    });
+    let resolveStale: (value: ReturnType<typeof page>) => void = () => {};
+    listQuestsMock
+      .mockResolvedValueOnce(page([QUEST]))
+      .mockReturnValueOnce(
+        new Promise(resolve => {
+          resolveStale = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(page([]));
+    const { result } = renderHook(() => useListQuests());
+    await waitFor(() => expect(result.current.quests).toEqual([QUEST]));
+    act(() => {
+      result.current.refetch();
+    });
+    act(() => {
+      result.current.removeQuest(QUEST.id);
+    });
+    await act(async () => {
+      resolveStale(page([QUEST]));
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.quests).toEqual([]);
+  });
+
   it('aborts the pending request on unmount', () => {
     listQuestsMock.mockReturnValue(new Promise(() => {}));
 
