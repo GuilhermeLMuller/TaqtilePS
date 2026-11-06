@@ -1,7 +1,13 @@
 import type { Paginated } from '@repo/core/pagination';
 import { type ZodType, z } from 'zod';
 import { PageRequest, PaginatedResponse } from '#api/common/common.payload.js';
-import { QUEST_DIFFICULTIES, QUEST_STATUSES, type Quest, type QuestInput } from '#domain/model/quests.model.js';
+import {
+  QUEST_DIFFICULTIES,
+  QUEST_STATUSES,
+  type Quest,
+  type QuestInput,
+  type UpdateQuestInput,
+} from '#domain/model/quests.model.js';
 import type { ListQuestsInput } from '#domain/quests/list-quests.use-case.js';
 
 export const QuestStatusEnum = z.enum(QUEST_STATUSES);
@@ -24,6 +30,13 @@ export const QuestRequest = z.object({
   description: z.string().trim().min(1).max(5000),
   difficulty: QuestDifficultyEnum,
 }) satisfies ZodType<QuestInput>;
+
+export const UpdateQuestRequest = QuestRequest.extend({ status: QuestStatusEnum })
+  .partial()
+  .strict()
+  .refine(value => Object.keys(value).length > 0, {
+    message: 'Informe ao menos um campo para atualizar.',
+  }) satisfies ZodType<UpdateQuestInput>;
 
 export const QuestParams = z.object({
   id: z.string().startsWith('q_'),

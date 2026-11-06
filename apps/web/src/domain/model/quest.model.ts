@@ -17,6 +17,8 @@ export interface QuestInput {
   difficulty: QuestDifficulty;
 }
 
+export type UpdateQuestInput = Partial<QuestInput & Pick<Quest, 'status'>>;
+
 export interface PageInfo {
   limit: number;
   offset: number;

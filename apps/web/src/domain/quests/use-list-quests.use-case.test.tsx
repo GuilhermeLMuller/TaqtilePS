@@ -85,6 +85,37 @@ describe('useListQuests', () => {
     await waitFor(() => expect(listQuestsMock).toHaveBeenCalledTimes(1));
   });
 
+  it('replaces a saved quest and ignores a stale in-flight list response', async () => {
+    const page = (nodes: Quest[]) => ({
+      nodes,
+      count: nodes.length,
+      pageInfo: { limit: 100, offset: 0, hasNextPage: false, hasPreviousPage: false },
+    });
+    let resolveStale: (value: ReturnType<typeof page>) => void = () => {};
+    const updated = { ...QUEST, status: 'resolved' as const };
+    listQuestsMock
+      .mockResolvedValueOnce(page([QUEST]))
+      .mockReturnValueOnce(
+        new Promise(resolve => {
+          resolveStale = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(page([updated]));
+    const { result } = renderHook(() => useListQuests());
+    await waitFor(() => expect(result.current.quests).toEqual([QUEST]));
+    act(() => {
+      result.current.refetch();
+    });
+    act(() => {
+      result.current.replaceQuest(updated);
+    });
+    await act(async () => {
+      resolveStale(page([QUEST]));
+    });
+    await waitFor(() => expect(result.current.quests).toEqual([updated]));
+    expect(listQuestsMock).toHaveBeenCalledTimes(3);
+  });
+
   it('ignores a stale response that resolves after a newer one', async () => {
     const page = (nodes: Quest[]) => ({
       nodes,

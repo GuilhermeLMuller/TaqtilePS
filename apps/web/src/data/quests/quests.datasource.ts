@@ -1,5 +1,5 @@
 import { apiRequest } from '@core/http/http-client';
-import type { Paginated, Quest, QuestInput, QuestStatus } from '@domain/model/quest.model';
+import type { Paginated, Quest, QuestInput, QuestStatus, UpdateQuestInput } from '@domain/model/quest.model';
 import { paginatedQuestSchema, questSchema } from './quest.schema';
 
 interface ListQuestsParams {
@@ -28,6 +28,14 @@ export async function listQuests(params: ListQuestsParams = {}, signal?: AbortSi
 export async function createQuest(input: QuestInput): Promise<Quest> {
   const response = await apiRequest<unknown>('/quests', {
     method: 'POST',
+    body: JSON.stringify(input),
+  });
+  return questSchema.parse(response);
+}
+
+export async function updateQuest(id: string, input: UpdateQuestInput): Promise<Quest> {
+  const response = await apiRequest<unknown>(`/quests/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
     body: JSON.stringify(input),
   });
   return questSchema.parse(response);

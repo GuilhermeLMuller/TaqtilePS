@@ -2,45 +2,66 @@ import { Button } from '@atomic/atm.button';
 import { Body } from '@atomic/atm.typography';
 import { LoadingCentered } from '@atomic/mol.loading';
 import { Col, Grid } from '@atomic/obj.grid';
-import type { Quest, QuestInput, QuestStatus } from '@domain/model/quest.model';
+import { ApiError } from '@core/http/http-client';
+import { updateQuest } from '@data/quests/quests.datasource';
+import type { Quest, QuestInput, UpdateQuestInput } from '@domain/model/quest.model';
 import { useCreateQuest } from '@domain/quests/use-create-quest.use-case';
 import { useListQuests } from '@domain/quests/use-list-quests.use-case';
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { CreateQuestModal } from './create-quest-modal.component';
+import { EditQuestModal } from './edit-quest-modal.component';
 import { QuestBoardHeader } from './quest-board-header.component';
 import { QuestColumn } from './quest-column.component';
 import { QuestPlayerHud } from './quest-player-hud.component';
 import { NEXT_STATUS, QUEST_STATUS_COLUMNS } from './quest-presentation';
 
 const QuestBoardPage = () => {
-  const { quests, isLoading, error, refetch } = useListQuests();
+  const { quests, isLoading, error, refetch, replaceQuest } = useListQuests();
   const { createQuest, isLoading: isCreating, error: createError } = useCreateQuest();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [statusOverrides, setStatusOverrides] = useState<Record<string, QuestStatus>>({});
+  const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const updating = useRef(false);
   // Only the first load replaces the board with a spinner; refetches keep the current columns on screen.
   const isInitialLoading = isLoading && quests.length === 0;
 
-  const effectiveStatus = useCallback(
-    (quest: Quest): QuestStatus => statusOverrides[quest.id] ?? quest.status,
-    [statusOverrides],
-  );
+  const saveQuest = async (quest: Quest, input: UpdateQuestInput): Promise<boolean> => {
+    if (updating.current) {
+      return false;
+    }
+    updating.current = true;
+    setIsUpdating(true);
+    setUpdateError(null);
+    try {
+      const updated = await updateQuest(quest.id, input);
+      replaceQuest(updated);
+      return true;
+    } catch (err) {
+      setUpdateError(err instanceof ApiError ? err.message : 'Falha ao atualizar a missão');
+      return false;
+    } finally {
+      updating.current = false;
+      setIsUpdating(false);
+    }
+  };
 
-  const handleAdvance = (quest: Quest) => {
-    const next = NEXT_STATUS[effectiveStatus(quest)];
+  const handleAdvance = async (quest: Quest) => {
+    const next = NEXT_STATUS[quest.status];
     if (!next) {
       return;
     }
 
-    setStatusOverrides(previous => ({ ...previous, [quest.id]: next }));
+    await saveQuest(quest, { status: next });
   };
 
   const columns = useMemo(
     () =>
       QUEST_STATUS_COLUMNS.map(column => ({
         ...column,
-        quests: quests.filter(quest => effectiveStatus(quest) === column.status),
+        quests: quests.filter(quest => quest.status === column.status),
       })),
-    [quests, effectiveStatus],
+    [quests],
   );
 
   const handleCreateQuest = async (input: QuestInput) => {
@@ -61,6 +82,14 @@ const QuestBoardPage = () => {
       <Col sm={12} className="mb-lg">
         <QuestPlayerHud />
       </Col>
+
+      {updateError && !editingQuest && (
+        <Col sm={12}>
+          <p role="alert" className="text-feedback-danger mb-md">
+            {updateError}
+          </p>
+        </Col>
+      )}
 
       {isInitialLoading && (
         <Col sm={12}>
@@ -88,6 +117,11 @@ const QuestBoardPage = () => {
                 subtitle={column.subtitle}
                 quests={column.quests}
                 onAdvance={handleAdvance}
+                onEdit={quest => {
+                  setUpdateError(null);
+                  setEditingQuest(quest);
+                }}
+                isUpdating={isUpdating}
               />
             ))}
           </div>
@@ -101,6 +135,26 @@ const QuestBoardPage = () => {
         isLoading={isCreating}
         errorMessage={createError?.message}
       />
+      {editingQuest && (
+        <EditQuestModal
+          quest={editingQuest}
+          onClose={() => {
+            if (!updating.current) {
+              setEditingQuest(null);
+              setUpdateError(null);
+            }
+          }}
+          onSubmit={async input => {
+            const succeeded = await saveQuest(editingQuest, input);
+            if (succeeded) {
+              setEditingQuest(null);
+            }
+            return succeeded;
+          }}
+          isLoading={isUpdating}
+          errorMessage={updateError}
+        />
+      )}
     </Grid>
   );
 };

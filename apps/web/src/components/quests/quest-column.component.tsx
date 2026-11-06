@@ -7,9 +7,11 @@ interface QuestColumnProps {
   subtitle: string;
   quests: Quest[];
   onAdvance: (quest: Quest) => void;
+  onEdit: (quest: Quest) => void;
+  isUpdating: boolean;
 }
 
-export const QuestColumn = ({ status, title, subtitle, quests, onAdvance }: QuestColumnProps) => (
+export const QuestColumn = ({ status, title, subtitle, quests, onAdvance, onEdit, isUpdating }: QuestColumnProps) => (
   <section
     className="border-background-strong flex flex-col rounded-[6px] border"
     style={{ background: 'var(--pergaminho-coluna)' }}>
@@ -36,7 +38,14 @@ export const QuestColumn = ({ status, title, subtitle, quests, onAdvance }: Ques
         </div>
       )}
       {quests.map(quest => (
-        <QuestCard key={quest.id} quest={quest} columnStatus={status} onAdvance={onAdvance} />
+        <QuestCard
+          key={quest.id}
+          quest={quest}
+          columnStatus={status}
+          onAdvance={onAdvance}
+          onEdit={onEdit}
+          isUpdating={isUpdating}
+        />
       ))}
     </div>
   </section>

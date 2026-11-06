@@ -10,6 +10,7 @@ interface UseListQuestsResult {
   isLoading: boolean;
   error: ApiError | null;
   refetch: () => void;
+  replaceQuest: (quest: Quest) => void;
 }
 
 export function useListQuests(): UseListQuestsResult {
@@ -39,6 +40,7 @@ export function useListQuests(): UseListQuestsResult {
     } finally {
       if (!request.signal.aborted) {
         setIsLoading(false);
+        requestRef.current = null;
       }
     }
   }, []);
@@ -48,5 +50,18 @@ export function useListQuests(): UseListQuestsResult {
     return () => requestRef.current?.abort();
   }, [load]);
 
-  return { quests, isLoading, error, refetch: load };
+  const replaceQuest = useCallback(
+    (quest: Quest) => {
+      const wasLoading = requestRef.current !== null;
+      requestRef.current?.abort();
+      setIsLoading(false);
+      setQuests(previous => previous.map(item => (item.id === quest.id ? quest : item)));
+      if (wasLoading) {
+        load();
+      }
+    },
+    [load],
+  );
+
+  return { quests, isLoading, error, refetch: load, replaceQuest };
 }
