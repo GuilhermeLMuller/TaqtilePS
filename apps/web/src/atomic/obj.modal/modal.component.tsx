@@ -22,14 +22,15 @@ export const Modal: React.FC<ModalProps> = props => (
     }}>
     <Dialog.Portal>
       <div className={style().wrapper({ opened: props.opened })}>
-        <Dialog.Overlay className={style().overlay({ opened: props.opened })} />
-        <Dialog.Content className={style().box({ opened: props.opened, small: props.small })}>
-          <Dialog.Close className={style().close()} aria-label="Fechar">
-            <FaIcon.Close />
-          </Dialog.Close>
-          <Dialog.Title className={props.hideTitle ? 'sr-only' : style().title()}>{props.title}</Dialog.Title>
-          {props.children}
-        </Dialog.Content>
+        <Dialog.Overlay className={style().overlay({ opened: props.opened })}>
+          <Dialog.Content className={style().box({ opened: props.opened, small: props.small })}>
+            <Dialog.Close className={style().close()} aria-label="Fechar">
+              <FaIcon.Close />
+            </Dialog.Close>
+            <Dialog.Title className={props.hideTitle ? 'sr-only' : style().title()}>{props.title}</Dialog.Title>
+            {props.children}
+          </Dialog.Content>
+        </Dialog.Overlay>
       </div>
     </Dialog.Portal>
   </Dialog.Root>
