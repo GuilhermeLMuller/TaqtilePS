@@ -1,4 +1,5 @@
 import { ApiError } from '@core/http/http-client';
+import { getPlayerProgress } from '@data/player/player.datasource';
 import { updateQuest } from '@data/quests/quests.datasource';
 import type { Quest } from '@domain/model/quest.model';
 import { useCreateQuest } from '@domain/quests/use-create-quest.use-case';
@@ -16,6 +17,7 @@ vi.mock('@domain/quests/use-create-quest.use-case', () => ({
   useCreateQuest: vi.fn(),
 }));
 vi.mock('@data/quests/quests.datasource', () => ({ updateQuest: vi.fn() }));
+vi.mock('@data/player/player.datasource', () => ({ getPlayerProgress: vi.fn() }));
 
 const useListQuestsMock = vi.mocked(useListQuests);
 const useCreateQuestMock = vi.mocked(useCreateQuest);
@@ -34,30 +36,35 @@ const refetch = vi.fn();
 const createQuest = vi.fn();
 const replaceQuest = vi.fn();
 const updateQuestMock = vi.mocked(updateQuest);
+const getProgressMock = vi.mocked(getPlayerProgress);
 
 beforeEach(() => {
   refetch.mockReset();
   createQuest.mockReset();
   replaceQuest.mockReset();
   updateQuestMock.mockReset();
+  getProgressMock.mockReset();
+  getProgressMock.mockResolvedValue({ totalXp: 0, level: 1, currentXp: 0 });
   useListQuestsMock.mockReturnValue({ quests: [OPEN_QUEST], isLoading: false, error: null, refetch, replaceQuest });
   useCreateQuestMock.mockReturnValue({ createQuest, isLoading: false, error: null });
 });
 
 describe('QuestBoardPage', () => {
-  it('shows the loading state while quests are being fetched', () => {
+  it('shows the loading state while quests are being fetched', async () => {
     useListQuestsMock.mockReturnValue({ quests: [], isLoading: true, error: null, refetch, replaceQuest });
 
     render(<QuestBoardPage />);
 
+    await screen.findByText('0 / 100 XP');
     expect(screen.queryByText(OPEN_QUEST.title)).not.toBeInTheDocument();
   });
 
-  it('keeps the board on screen while refetching', () => {
+  it('keeps the board on screen while refetching', async () => {
     useListQuestsMock.mockReturnValue({ quests: [OPEN_QUEST], isLoading: true, error: null, refetch, replaceQuest });
 
     render(<QuestBoardPage />);
 
+    await screen.findByText('0 / 100 XP');
     expect(screen.getByText(OPEN_QUEST.title)).toBeInTheDocument();
   });
 
@@ -79,9 +86,10 @@ describe('QuestBoardPage', () => {
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  it('lists each quest under its status column', () => {
+  it('lists each quest under its status column', async () => {
     render(<QuestBoardPage />);
 
+    await screen.findByText('0 / 100 XP');
     expect(screen.getByText(OPEN_QUEST.title)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Pergaminhos Novos' })).toBeInTheDocument();
   });
@@ -99,6 +107,51 @@ describe('QuestBoardPage', () => {
     useListQuestsMock.mockReturnValue({ quests: [updated], isLoading: false, error: null, refetch, replaceQuest });
     rerender(<QuestBoardPage />);
     expect(screen.getByRole('button', { name: 'Selar a vitória' })).toBeInTheDocument();
+  });
+
+  it('updates the XP and level after completing a quest', async () => {
+    const user = userEvent.setup();
+    const quest = { ...OPEN_QUEST, status: 'in_progress' as const };
+    useListQuestsMock.mockReturnValue({ quests: [quest], isLoading: false, error: null, refetch, replaceQuest });
+    getProgressMock
+      .mockResolvedValueOnce({ totalXp: 90, level: 1, currentXp: 90 })
+      .mockResolvedValueOnce({ totalXp: 115, level: 2, currentXp: 15 });
+    updateQuestMock.mockResolvedValue({ ...quest, status: 'resolved' });
+    render(<QuestBoardPage />);
+    expect(await screen.findByText('90 / 100 XP')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Selar a vitória' }));
+    expect(updateQuestMock).toHaveBeenCalledWith('q_1', { status: 'resolved' });
+    expect(await screen.findByText('15 / 100 XP')).toBeInTheDocument();
+    expect(screen.getByText(/Nível 2/)).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '15');
+  });
+
+  it('updates progress after changing the difficulty of a completed quest', async () => {
+    const user = userEvent.setup();
+    const quest = { ...OPEN_QUEST, status: 'resolved' as const };
+    useListQuestsMock.mockReturnValue({ quests: [quest], isLoading: false, error: null, refetch, replaceQuest });
+    getProgressMock
+      .mockResolvedValueOnce({ totalXp: 25, level: 1, currentXp: 25 })
+      .mockResolvedValueOnce({ totalXp: 50, level: 1, currentXp: 50 });
+    updateQuestMock.mockResolvedValue({ ...quest, difficulty: 'high', xpReward: 50 });
+    render(<QuestBoardPage />);
+    expect(await screen.findByText('25 / 100 XP')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Editar missão' }));
+    await user.click(screen.getByRole('button', { name: 'Difícil' }));
+    await user.click(screen.getByRole('button', { name: 'Salvar alterações' }));
+    expect(updateQuestMock).toHaveBeenCalledWith('q_1', { difficulty: 'high' });
+    expect(await screen.findByText('50 / 100 XP')).toBeInTheDocument();
+  });
+
+  it('shows progress errors and allows retrying', async () => {
+    const user = userEvent.setup();
+    getProgressMock
+      .mockRejectedValueOnce(new ApiError('Falha no progresso'))
+      .mockResolvedValueOnce({ totalXp: 10, level: 1, currentXp: 10 });
+    render(<QuestBoardPage />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Falha no progresso');
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(await screen.findByText('10 / 100 XP')).toBeInTheDocument();
   });
 
   it('shows an error and keeps the quest in its column when advancement fails', async () => {
