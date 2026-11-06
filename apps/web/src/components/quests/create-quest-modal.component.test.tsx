@@ -45,18 +45,27 @@ describe('CreateQuestModal', () => {
     expect(screen.queryByText('Informe o título da missão.')).not.toBeInTheDocument();
   });
 
-  it('submits the trimmed title and description, then clears the form on success', async () => {
+  it('submits the selected difficulty and trimmed fields, then resets the form on success', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(true);
     render(<CreateQuestModal opened onClose={vi.fn()} onSubmit={onSubmit} isLoading={false} />);
 
     await user.type(screen.getByLabelText('Título da missão'), '  Enfrentar o dragão  ');
     await user.type(screen.getByLabelText('Descrição'), '  Derrote a besta  ');
+    expect(screen.getByRole('button', { name: 'Normal', pressed: true })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Difícil' }));
+    expect(screen.getByRole('button', { name: 'Difícil', pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Normal', pressed: false })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Publicar missão' }));
 
-    expect(onSubmit).toHaveBeenCalledWith({ title: 'Enfrentar o dragão', description: 'Derrote a besta' });
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: 'Enfrentar o dragão',
+      description: 'Derrote a besta',
+      difficulty: 'high',
+    });
     expect(screen.getByLabelText('Título da missão')).toHaveValue('');
     expect(screen.getByLabelText('Descrição')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Normal', pressed: true })).toBeInTheDocument();
   });
 
   it('keeps the form filled when the submission fails', async () => {

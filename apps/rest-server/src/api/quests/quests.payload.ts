@@ -22,6 +22,7 @@ export const QuestResponse = z
 export const QuestRequest = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().min(1).max(5000),
+  difficulty: QuestDifficultyEnum,
 }) satisfies ZodType<QuestInput>;
 
 export const QuestParams = z.object({

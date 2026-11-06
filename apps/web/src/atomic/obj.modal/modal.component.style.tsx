@@ -3,12 +3,12 @@ import { tv } from 'tailwind-variants';
 export const style = tv({
   slots: {
     wrapper: 'absolute invisible z-50',
-    overlay: 'fixed top-0 right-0 bottom-0 left-0 bg-neutral opacity-0 transition-all invisible duration-300',
+    overlay: 'fixed inset-0 overflow-y-auto bg-neutral/30 invisible',
     close: 'absolute top-0 right-0 p-md text-neutral-strong cursor-pointer',
     title: 'text-xl font-secondary font-semibold mb-md pr-lg',
     box: [
-      'fixed top-[80px] left-[50%] translate-x-[-50%]  translate-y-[-50%]', // positioning
-      'p-md w-[90%] m-w-[90%] m-h-[80%] overflow-auto overscroll-contain', // size
+      'relative mx-auto my-4 sm:my-10', // positioning
+      'p-md w-[90%] max-w-[90%]', // size
       'bg-background rounded-lg opacity-0', // styling
       'transition-all', //animation
     ],
@@ -17,8 +17,8 @@ export const style = tv({
     opened: {
       true: {
         wrapper: 'visible',
-        overlay: 'opacity-30 visible',
-        box: 'translate-y-[0%] opacity-100',
+        overlay: 'visible',
+        box: 'opacity-100',
       },
     },
     small: {

@@ -3,8 +3,9 @@ import { TextAreaInput, TextInput } from '@atomic/atm.text-input';
 import { InputLabel } from '@atomic/atm.typography';
 import { Col, Grid } from '@atomic/obj.grid';
 import { Modal } from '@atomic/obj.modal';
-import type { QuestInput } from '@domain/model/quest.model';
+import type { QuestDifficulty, QuestInput } from '@domain/model/quest.model';
 import { type FormEvent, useRef, useState } from 'react';
+import { QUEST_DIFFICULTY_LABEL } from './quest-presentation';
 
 const TITLE_MAX_LENGTH = 200;
 const DESCRIPTION_MAX_LENGTH = 5000;
@@ -22,6 +23,7 @@ interface CreateQuestModalProps {
 export function CreateQuestModal(props: CreateQuestModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [difficulty, setDifficulty] = useState<QuestDifficulty>('normal');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -45,10 +47,11 @@ export function CreateQuestModal(props: CreateQuestModalProps) {
       return;
     }
 
-    const succeeded = await props.onSubmit({ title: title.trim(), description: description.trim() });
+    const succeeded = await props.onSubmit({ title: title.trim(), description: description.trim(), difficulty });
     if (succeeded) {
       setTitle('');
       setDescription('');
+      setDifficulty('normal');
       setSubmitAttempted(false);
     }
   };
@@ -104,6 +107,27 @@ export function CreateQuestModal(props: CreateQuestModalProps) {
                 {descriptionError}
               </p>
             )}
+          </Col>
+          <Col sm={12} className="mb-md">
+            <fieldset>
+              <legend className="text-tinta-2 mb-xs font-semibold">Dificuldade</legend>
+              <div className="flex gap-sm">
+                {(Object.keys(QUEST_DIFFICULTY_LABEL) as QuestDifficulty[]).map(option => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={difficulty === option}
+                    onClick={() => setDifficulty(option)}
+                    className={`flex-1 cursor-pointer rounded-[4px] border px-md py-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                      difficulty === option
+                        ? 'border-secondary-strong bg-secondary-strong text-fixed-white'
+                        : 'border-background-strong bg-neutral-xsoft text-tinta-2'
+                    }`}>
+                    {QUEST_DIFFICULTY_LABEL[option]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
           </Col>
           <Col sm={12}>
             <Button type="submit" variant="cta" expanded loading={props.isLoading}>
