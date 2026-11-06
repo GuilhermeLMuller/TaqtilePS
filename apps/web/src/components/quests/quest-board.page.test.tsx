@@ -98,9 +98,14 @@ describe('QuestBoardPage', () => {
     await user.click(screen.getByRole('button', { name: 'Nova missão' }));
     await user.type(screen.getByLabelText('Título da missão'), 'Nova missão criada');
     await user.type(screen.getByLabelText('Descrição'), 'Descrição da missão');
+    await user.click(screen.getByRole('button', { name: 'Fácil' }));
     await user.click(screen.getByRole('button', { name: 'Publicar missão' }));
 
-    expect(createQuest).toHaveBeenCalledWith({ title: 'Nova missão criada', description: 'Descrição da missão' });
+    expect(createQuest).toHaveBeenCalledWith({
+      title: 'Nova missão criada',
+      description: 'Descrição da missão',
+      difficulty: 'easy',
+    });
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 });

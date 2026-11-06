@@ -14,6 +14,7 @@ export interface Quest {
 export interface QuestInput {
   title: string;
   description: string;
+  difficulty: QuestDifficulty;
 }
 
 export interface PageInfo {

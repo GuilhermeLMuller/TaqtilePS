@@ -29,7 +29,11 @@ describe('useCreateQuest', () => {
 
     let created: Quest | null = null;
     await act(async () => {
-      created = await result.current.createQuest({ title: QUEST.title, description: QUEST.description });
+      created = await result.current.createQuest({
+        title: QUEST.title,
+        description: QUEST.description,
+        difficulty: QUEST.difficulty,
+      });
     });
 
     expect(created).toEqual(QUEST);
@@ -44,7 +48,11 @@ describe('useCreateQuest', () => {
 
     let created: Quest | null = QUEST;
     await act(async () => {
-      created = await result.current.createQuest({ title: QUEST.title, description: QUEST.description });
+      created = await result.current.createQuest({
+        title: QUEST.title,
+        description: QUEST.description,
+        difficulty: QUEST.difficulty,
+      });
     });
 
     expect(created).toBeNull();
@@ -58,7 +66,11 @@ describe('useCreateQuest', () => {
     const { result } = renderHook(() => useCreateQuest());
 
     await act(async () => {
-      await result.current.createQuest({ title: QUEST.title, description: QUEST.description });
+      await result.current.createQuest({
+        title: QUEST.title,
+        description: QUEST.description,
+        difficulty: QUEST.difficulty,
+      });
     });
 
     expect(result.current.error).toBeInstanceOf(ApiError);

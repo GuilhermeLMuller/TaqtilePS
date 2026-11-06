@@ -28,8 +28,12 @@ describe('POST /quests', () => {
     mock.restore();
   });
 
-  it('should create quest successfully with the default difficulty', async () => {
-    const body = { title: 'Login page is throwing 500', description: 'Users report a server error.' };
+  it.each([
+    ['easy', 10],
+    ['normal', 25],
+    ['high', 50],
+  ] as const)('should persist %s difficulty and return %i XP', async (difficulty, xpReward) => {
+    const body = { title: 'Login page is throwing 500', description: 'Users report a server error.', difficulty };
     const response = await requestMaker.post({ endpoint, body });
 
     const questDb = (await dbClient.query.questTable.findFirst({ where: { id: questId } }))!;
@@ -39,25 +43,29 @@ describe('POST /quests', () => {
       title: body.title,
       description: body.description,
       status: 'open',
-      difficulty: 'normal',
+      difficulty,
       internalId: expect.any(Number),
       createdAt: expect.any(Date),
       updatedAt: expect.any(Date),
       deletedAt: null,
     });
+    expect(response.data.difficulty).toBe(difficulty);
+    expect(response.data.xpReward).toBe(xpReward);
   });
 
-  it('should ignore a difficulty sent by the client', async () => {
-    const body = { title: 'Urgent: production checkout is down', description: 'desc', difficulty: 'high' } as any;
-    const response = await requestMaker.post({ endpoint, body });
+  it('should reject an invalid difficulty', async () => {
+    const body = { title: 'Quest', description: 'desc', difficulty: 'impossible' } as any;
+    await requestMaker.post({ endpoint, body, expectedStatus: 422 });
+    expect(await dbClient.query.questTable.findFirst({ where: { id: questId } })).toBeUndefined();
+  });
 
-    const questDb = (await dbClient.query.questTable.findFirst({ where: { id: questId } }))!;
-    checkQuest(response.data, questDb);
-    expect(questDb.difficulty).toBe('normal');
+  it('should reject a missing difficulty', async () => {
+    const body = { title: 'Quest', description: 'desc' } as any;
+    await requestMaker.post({ endpoint, body, expectedStatus: 422 });
   });
 
   it('should give an error if title is missing', async () => {
-    const body = { description: 'desc' } as any;
+    const body = { description: 'desc', difficulty: 'normal' } as any;
     const response = await requestMaker.post({ endpoint, body, expectedStatus: 422 });
 
     checkErrors(response, [
@@ -66,7 +74,7 @@ describe('POST /quests', () => {
   });
 
   it('should give an error if title is not a string', async () => {
-    const body = { title: 12345, description: 'desc' } as any;
+    const body = { title: 12345, description: 'desc', difficulty: 'normal' } as any;
     const response = await requestMaker.post({ endpoint, body, expectedStatus: 422 });
 
     checkErrors(response, [
@@ -79,7 +87,7 @@ describe('POST /quests', () => {
   });
 
   it('should give an error if description is missing', async () => {
-    const body = { title: 'Missing description' } as any;
+    const body = { title: 'Missing description', difficulty: 'normal' } as any;
     const response = await requestMaker.post({ endpoint, body, expectedStatus: 422 });
 
     checkErrors(response, [

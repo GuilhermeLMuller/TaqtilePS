@@ -63,13 +63,17 @@ describe('createQuest', () => {
   it('POSTs the input as JSON and returns the parsed quest', async () => {
     mockFetchOnce(QUEST_RESPONSE);
 
-    const result = await createQuest({ title: 'Enfrentar o dragão', description: 'Derrote a besta' });
+    const result = await createQuest({
+      title: 'Enfrentar o dragão',
+      description: 'Derrote a besta',
+      difficulty: 'high',
+    });
 
     expect(fetch).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/v1\/quests$/),
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ title: 'Enfrentar o dragão', description: 'Derrote a besta' }),
+        body: JSON.stringify({ title: 'Enfrentar o dragão', description: 'Derrote a besta', difficulty: 'high' }),
       }),
     );
     expect(result).toEqual(QUEST_RESPONSE);
