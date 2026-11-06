@@ -9,6 +9,7 @@ import {
   type QuestData,
   type QuestInput,
   type QuestStatus,
+  type UpdateQuestInput,
 } from '#domain/model/quests.model.js';
 
 const EXTERNAL_ID_PREFIX = 'q_';
@@ -18,6 +19,15 @@ const StatusColumn = z.enum(QUEST_STATUSES);
 const DifficultyColumn = z.enum(QUEST_DIFFICULTIES);
 
 export const QuestsDbDatasource = {
+  async update(id: string, input: UpdateQuestInput): Promise<QuestData | null> {
+    const [quest] = await dbClient
+      .update(questTable)
+      .set(input)
+      .where(and(eq(questTable.id, id), isNull(questTable.deletedAt)))
+      .returning();
+    return quest ? toQuestData(quest) : null;
+  },
+
   async create(input: QuestInput): Promise<QuestData> {
     const id = DatabaseIdGenerator.generate(EXTERNAL_ID_PREFIX);
     const createdAt = new Date(Date.now() + 3 * 60 * 60 * 1000);

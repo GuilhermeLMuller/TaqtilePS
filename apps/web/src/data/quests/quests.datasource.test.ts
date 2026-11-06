@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createQuest, listQuests } from './quests.datasource';
+import { createQuest, listQuests, updateQuest } from './quests.datasource';
 
 const QUEST_RESPONSE = {
   id: 'q_1',
@@ -18,6 +18,26 @@ function mockFetchOnce(body: unknown) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('updateQuest', () => {
+  it('PATCHes the provided fields and validates the response', async () => {
+    const updated = { ...QUEST_RESPONSE, status: 'resolved', difficulty: 'high', xpReward: 50 };
+    mockFetchOnce(updated);
+    expect(await updateQuest('q_1', { status: 'resolved', difficulty: 'high' })).toEqual(updated);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/quests\/q_1$/),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'resolved', difficulty: 'high' }),
+      }),
+    );
+  });
+
+  it('rejects an invalid response', async () => {
+    mockFetchOnce({ ...QUEST_RESPONSE, difficulty: 'invalid' });
+    await expect(updateQuest('q_1', { status: 'resolved' })).rejects.toThrow();
+  });
 });
 
 describe('listQuests', () => {

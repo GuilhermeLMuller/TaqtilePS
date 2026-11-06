@@ -21,3 +21,5 @@ export interface QuestInput {
   description: string;
   difficulty: QuestDifficulty;
 }
+
+export type UpdateQuestInput = Partial<QuestInput & Pick<Quest, 'status'>>;

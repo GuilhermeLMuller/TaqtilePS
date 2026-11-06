@@ -18,4 +18,18 @@ describe('CORS', () => {
 
     expect(response.headers['access-control-allow-origin']).toBeUndefined();
   });
+
+  it('allows PATCH preflight for the web app', async () => {
+    const [origin] = Env.CORS_ORIGINS;
+    const response = await axios.options(`${url}/q_123`, {
+      headers: {
+        Origin: origin,
+        'Access-Control-Request-Method': 'PATCH',
+        'Access-Control-Request-Headers': 'content-type',
+      },
+      validateStatus: () => true,
+    });
+    expect(response.headers['access-control-allow-origin']).toBe(origin);
+    expect(response.headers['access-control-allow-methods']).toContain('PATCH');
+  });
 });
