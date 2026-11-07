@@ -3,7 +3,7 @@ import { Body } from '@atomic/atm.typography';
 import { LoadingCentered } from '@atomic/mol.loading';
 import { Col, Grid } from '@atomic/obj.grid';
 import { ApiError } from '@core/http/http-client';
-import { updateQuest } from '@data/quests/quests.datasource';
+import { deleteQuest, updateQuest } from '@data/quests/quests.datasource';
 import type { Quest, QuestInput, UpdateQuestInput } from '@domain/model/quest.model';
 import { usePlayerProgress } from '@domain/player/use-player-progress.use-case';
 import { useCreateQuest } from '@domain/quests/use-create-quest.use-case';
@@ -15,9 +15,10 @@ import { QuestBoardHeader } from './quest-board-header.component';
 import { QuestColumn } from './quest-column.component';
 import { QuestPlayerHud } from './quest-player-hud.component';
 import { NEXT_STATUS, QUEST_STATUS_COLUMNS } from './quest-presentation';
+import { RemoveQuestModal } from './remove-quest-modal.component';
 
 const QuestBoardPage = () => {
-  const { quests, isLoading, error, refetch, replaceQuest } = useListQuests();
+  const { quests, isLoading, error, refetch, replaceQuest, removeQuest } = useListQuests();
   const { createQuest, isLoading: isCreating, error: createError } = useCreateQuest();
   const {
     progress,
@@ -27,6 +28,8 @@ const QuestBoardPage = () => {
   } = usePlayerProgress();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
+  const [removingQuest, setRemovingQuest] = useState<Quest | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const updating = useRef(false);
@@ -61,6 +64,26 @@ const QuestBoardPage = () => {
     }
 
     await saveQuest(quest, { status: next });
+  };
+
+  const handleRemove = async () => {
+    if (!removingQuest || updating.current) {
+      return;
+    }
+    updating.current = true;
+    setIsUpdating(true);
+    setRemoveError(null);
+    try {
+      await deleteQuest(removingQuest.id);
+      removeQuest(removingQuest.id);
+      setRemovingQuest(null);
+      void refetchProgress();
+    } catch (err) {
+      setRemoveError(err instanceof ApiError ? err.message : 'Falha ao remover a missão');
+    } finally {
+      updating.current = false;
+      setIsUpdating(false);
+    }
   };
 
   const columns = useMemo(
@@ -134,6 +157,10 @@ const QuestBoardPage = () => {
                   setUpdateError(null);
                   setEditingQuest(quest);
                 }}
+                onRemove={quest => {
+                  setRemoveError(null);
+                  setRemovingQuest(quest);
+                }}
                 isUpdating={isUpdating}
               />
             ))}
@@ -166,6 +193,20 @@ const QuestBoardPage = () => {
           }}
           isLoading={isUpdating}
           errorMessage={updateError}
+        />
+      )}
+      {removingQuest && (
+        <RemoveQuestModal
+          quest={removingQuest}
+          isLoading={isUpdating}
+          errorMessage={removeError}
+          onClose={() => {
+            if (!updating.current) {
+              setRemovingQuest(null);
+              setRemoveError(null);
+            }
+          }}
+          onConfirm={handleRemove}
         />
       )}
     </Grid>

@@ -19,6 +19,15 @@ const StatusColumn = z.enum(QUEST_STATUSES);
 const DifficultyColumn = z.enum(QUEST_DIFFICULTIES);
 
 export const QuestsDbDatasource = {
+  async softDelete(id: string): Promise<boolean> {
+    const deleted = await dbClient
+      .update(questTable)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(questTable.id, id), isNull(questTable.deletedAt)))
+      .returning({ id: questTable.id });
+    return deleted.length > 0;
+  },
+
   async countCompletedByDifficulty() {
     const rows = await dbClient
       .select({ difficulty: questTable.difficulty, count: count() })

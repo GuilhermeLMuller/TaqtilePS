@@ -11,6 +11,7 @@ interface UseListQuestsResult {
   error: ApiError | null;
   refetch: () => void;
   replaceQuest: (quest: Quest) => void;
+  removeQuest: (id: string) => void;
 }
 
 export function useListQuests(): UseListQuestsResult {
@@ -63,5 +64,13 @@ export function useListQuests(): UseListQuestsResult {
     [load],
   );
 
-  return { quests, isLoading, error, refetch: load, replaceQuest };
+  const removeQuest = useCallback(
+    (id: string) => {
+      setQuests(previous => previous.filter(quest => quest.id !== id));
+      void load();
+    },
+    [load],
+  );
+
+  return { quests, isLoading, error, refetch: load, replaceQuest, removeQuest };
 }

@@ -8,11 +8,12 @@ interface QuestCardProps {
   columnStatus: QuestStatus;
   onAdvance: (quest: Quest) => void;
   onEdit: (quest: Quest) => void;
+  onRemove: (quest: Quest) => void;
   isUpdating: boolean;
 }
 
 export function QuestCard(props: QuestCardProps) {
-  const { quest, columnStatus, onAdvance, onEdit, isUpdating } = props;
+  const { quest, columnStatus, onAdvance, onEdit, onRemove, isUpdating } = props;
   const advanceLabel = ADVANCE_LABEL[columnStatus];
   const classes = style({ columnStatus });
 
@@ -32,6 +33,14 @@ export function QuestCard(props: QuestCardProps) {
       </div>
       <button type="button" onClick={() => onEdit(quest)} disabled={isUpdating} className={classes.advanceButton()}>
         Editar missão
+      </button>
+      <button
+        type="button"
+        onClick={() => onRemove(quest)}
+        disabled={isUpdating}
+        aria-label={`Remover missão ${quest.title}`}
+        className={classes.advanceButton()}>
+        Remover missão
       </button>
       {advanceLabel ? (
         <button

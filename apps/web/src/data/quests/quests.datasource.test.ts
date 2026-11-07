@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createQuest, listQuests, updateQuest } from './quests.datasource';
+import { createQuest, deleteQuest, listQuests, updateQuest } from './quests.datasource';
 
 const QUEST_RESPONSE = {
   id: 'q_1',
@@ -15,6 +15,17 @@ function mockFetchOnce(body: unknown) {
   const response = { ok: true, status: 200, json: async () => body } as Response;
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response));
 }
+
+describe('deleteQuest', () => {
+  it('sends DELETE to the encoded quest URL and handles 204', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 204 }));
+    await expect(deleteQuest('q_1')).resolves.toBeUndefined();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/v1\/quests\/q_1$/),
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
